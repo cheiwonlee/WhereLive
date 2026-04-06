@@ -1,18 +1,8 @@
 import { useAppStore } from "@/stores/useAppStore";
 import { useMultiGuTransactions } from "@/hooks/useRealTransactions";
 import { getShortName } from "@/constants/regionCodes";
+import { getDisplayType, getTypeStyle, formatPrice, toPyeong } from "@/utils/display";
 import type { RealTransaction } from "@/types";
-
-const toPyeong = (sqm: number) => Math.round(sqm / 3.3058 * 10) / 10;
-
-function formatPrice(manwon: number): string {
-  if (manwon >= 10000) {
-    const eok = Math.floor(manwon / 10000);
-    const rem = manwon % 10000;
-    return rem > 0 ? `${eok}억 ${rem.toLocaleString()}만` : `${eok}억`;
-  }
-  return `${manwon.toLocaleString()}만`;
-}
 
 export default function HomePage() {
   const { filter, visibleGus, selectedDong, setSelectedDong, areaUnit, focusLocation } = useAppStore();
@@ -41,7 +31,6 @@ export default function HomePage() {
   const areaDisplay = (sqm: number) =>
     areaUnit === "pyeong" ? `${toPyeong(sqm)}평` : `${sqm}㎡`;
 
-  // 상단에 표시할 지역명 (짧은 형태)
   const regionLabel = visibleGus.length > 0
     ? visibleGus.slice(0, 3).map(getShortName).join(" · ") + (visibleGus.length > 3 ? " ..." : "")
     : "매물 목록";
@@ -51,9 +40,7 @@ export default function HomePage() {
       {selectedDong && (
         <div className="flex items-center justify-between bg-primary-50 px-4 py-2">
           <span className="text-sm font-semibold text-primary-700">📍 {selectedDong}</span>
-          <button onClick={() => setSelectedDong(null)} className="text-xs text-primary-500 hover:text-primary-700">
-            전체 보기
-          </button>
+          <button onClick={() => setSelectedDong(null)} className="text-xs text-primary-500 hover:text-primary-700">전체 보기</button>
         </div>
       )}
 
@@ -93,7 +80,8 @@ function TransactionCard({ item, areaLabel, onFocus, guName }: {
   item: RealTransaction; areaLabel: (n: number) => string;
   onFocus: (lat: number, lng: number) => void; guName: string;
 }) {
-  const isWolse = item.dealType === "월세";
+  const displayType = getDisplayType(item);
+  const style = getTypeStyle(displayType);
   const shortGu = getShortName(guName);
 
   async function handleClick() {
@@ -110,17 +98,19 @@ function TransactionCard({ item, areaLabel, onFocus, guName }: {
     <div onClick={handleClick} className="cursor-pointer border-b border-gray-50 px-4 py-3 transition-colors hover:bg-gray-50">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          {isWolse ? (
-            <p className="text-sm font-bold text-gray-900">월세 {formatPrice(item.depositAmount ?? 0)}/{item.monthlyRent?.toLocaleString()}</p>
-          ) : (
+          {displayType === "전세" ? (
             <p className="text-sm font-bold text-gray-900">전세 {formatPrice(item.dealAmount)}</p>
+          ) : (
+            <p className="text-sm font-bold text-gray-900">
+              {displayType === "반전세" ? "반전세" : "월세"} {formatPrice(item.depositAmount ?? 0)}/{item.monthlyRent?.toLocaleString()}
+            </p>
           )}
           <p className="mt-1 text-xs text-gray-500">{areaLabel(item.area)} · {item.floor}층</p>
           <p className="mt-0.5 text-xs text-gray-400">{shortGu} {item.dongName} · {item.apartName}</p>
         </div>
-        <span className={`mt-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${
-          isWolse ? "bg-blue-50 text-blue-600" : "bg-green-50 text-green-600"
-        }`}>{item.dealType}</span>
+        <span className={`mt-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
+          {displayType}
+        </span>
       </div>
     </div>
   );

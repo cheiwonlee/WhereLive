@@ -14,7 +14,7 @@ export default defineConfig({
     // 공공데이터 API CORS 우회용 프록시
     proxy: {
       "/api/molit": {
-        target: "https://apis.data.go.kr/1613000/BldRgstHubService",
+        target: "https://apis.data.go.kr",
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/molit/, ""),
       },

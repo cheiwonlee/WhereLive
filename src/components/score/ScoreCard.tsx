@@ -1,87 +1,103 @@
 import type { RealTransaction } from "@/types";
 import type { DongCluster } from "@/hooks/useAllDongClusters";
+import { usePreferenceStore } from "@/stores/usePreferenceStore";
 
 export interface ScoreResult {
   total: number;
   rentScore: number;
   facilityScore: number;
   transportScore: number;
+  safetyScore: number;
+  quietScore: number;
   avgMonthlyRent: number;
   avgDeposit: number;
   medianRent: number;
+  affordabilityRatio: number; // 소득 대비 주거비 비율
 }
 
 /**
- * 가성비 점수 산정
- * 
- * 종합 점수 = 월세 점수(40%) + 편의시설 점수(30%) + 교통 점수(30%)
- * 
- * 월세 점수: 평균 월세가 낮을수록 높은 점수
- * - 서울 평균 월세(약 70만원) 기준으로 정규화
- * 
- * 편의시설/교통 점수: 추후 카카오 로컬 API 연동 시 구현
- * - 현재는 거래 건수 기반 추정값 사용
+ * 가성비 점수 산정 (사용자 선호도 반영)
+ *
+ * 참고 연구:
+ * - 국토교통부 주거실태조사: 청년층(19~34세) 주거비 부담 기준 RIR 30%
+ * - 한국부동산원: 주거선호도 조사 — 대중교통 > 가격 > 편의시설 > 치안 순
+ * - KB부동산: 2030세대 전월세 선호 요인 분석
  */
 export function calculateScore(
   transactions: RealTransaction[],
-  _allTransactions?: RealTransaction[]
+  budget: number = 0,
 ): ScoreResult {
   const wolse = transactions.filter((t) => t.dealType === "월세");
   const deposits = transactions.map((t) => t.depositAmount ?? 0).filter((d) => d > 0);
 
-  // 평균 월세
   const avgMonthlyRent = wolse.length > 0
     ? Math.round(wolse.reduce((s, t) => s + (t.monthlyRent ?? 0), 0) / wolse.length)
     : 0;
 
-  // 평균 보증금
   const avgDeposit = deposits.length > 0
     ? Math.round(deposits.reduce((a, b) => a + b, 0) / deposits.length)
     : 0;
 
-  // 중앙값 월세
   const sortedRents = wolse.map((t) => t.monthlyRent ?? 0).sort((a, b) => a - b);
-  const medianRent = sortedRents.length > 0
-    ? sortedRents[Math.floor(sortedRents.length / 2)]
+  const medianRent = sortedRents.length > 0 ? sortedRents[Math.floor(sortedRents.length / 2)] : 0;
+
+  // 소득 대비 주거비 비율 (RIR)
+  const affordabilityRatio = budget > 0 && avgMonthlyRent > 0
+    ? Math.round((avgMonthlyRent / budget) * 100)
     : 0;
 
-  // 월세 점수 (0~100): 서울 평균 ~70만원 기준
-  // 월세가 낮을수록 높은 점수
-  const BASELINE_RENT = 70; // 서울 평균 월세 (만원)
+  // 월세 가성비 점수: 예산 대비 또는 서울 평균 대비
+  const BASELINE = budget > 0 ? budget * 0.3 : 70; // 예산의 30% 또는 서울 평균 70만원
   const rentScore = avgMonthlyRent > 0
-    ? Math.min(100, Math.max(0, Math.round((1 - avgMonthlyRent / (BASELINE_RENT * 2)) * 100)))
-    : 50; // 데이터 없으면 50점
+    ? Math.min(100, Math.max(0, Math.round((1 - avgMonthlyRent / (BASELINE * 2)) * 100)))
+    : 50;
 
-  // 편의시설 점수 (추후 카카오 로컬 API 연동)
-  // 현재: 거래 건수 기반 추정 (거래가 많은 지역 = 인프라 풍부 추정)
+  // 추후 카카오 로컬 API 연동 시 실제 데이터로 교체
   const txCount = transactions.length;
-  const facilityScore = Math.min(100, Math.max(20, Math.round(30 + txCount * 1.5)));
+  const facilityScore = Math.min(100, Math.max(20, Math.round(30 + txCount * 1.2)));
+  const transportScore = Math.min(100, Math.max(20, Math.round(25 + txCount * 1.0)));
+  const safetyScore = Math.min(100, Math.max(30, Math.round(40 + txCount * 0.8)));
+  const quietScore = Math.min(100, Math.max(10, Math.round(80 - txCount * 0.5)));
 
-  // 교통 점수 (추후 지하철역/버스 데이터 연동)
-  // 현재: 편의시설 점수와 유사한 추정
-  const transportScore = Math.min(100, Math.max(20, Math.round(25 + txCount * 1.2)));
-
-  // 종합 점수
   const total = Math.round(
-    rentScore * 0.4 + facilityScore * 0.3 + transportScore * 0.3
+    rentScore * 0.4 + facilityScore * 0.15 + transportScore * 0.2 +
+    safetyScore * 0.15 + quietScore * 0.1
   );
 
   return {
-    total,
-    rentScore,
-    facilityScore,
-    transportScore,
-    avgMonthlyRent,
-    avgDeposit,
-    medianRent,
+    total, rentScore, facilityScore, transportScore, safetyScore, quietScore,
+    avgMonthlyRent, avgDeposit, medianRent, affordabilityRatio,
   };
 }
 
-// 점수에 따른 색상
+/** 사용자 가중치를 반영한 종합 점수 */
+export function calculateWeightedScore(
+  base: ScoreResult,
+  weights: Record<string, number>
+): number {
+  const w = {
+    affordability: weights.affordability ?? 80,
+    transport: weights.transport ?? 70,
+    safety: weights.safety ?? 60,
+    convenience: weights.convenience ?? 50,
+    quiet: weights.quiet ?? 30,
+  };
+  const total = w.affordability + w.transport + w.safety + w.convenience + w.quiet;
+  if (total === 0) return base.total;
+
+  return Math.round(
+    (base.rentScore * w.affordability +
+     base.transportScore * w.transport +
+     base.safetyScore * w.safety +
+     base.facilityScore * w.convenience +
+     base.quietScore * w.quiet) / total
+  );
+}
+
 function getScoreColor(score: number): string {
-  if (score >= 70) return "#22c55e"; // 높음
-  if (score >= 40) return "#f59e0b"; // 보통
-  return "#ef4444"; // 낮음
+  if (score >= 70) return "#22c55e";
+  if (score >= 40) return "#f59e0b";
+  return "#ef4444";
 }
 
 function getScoreLabel(score: number): string {
@@ -98,72 +114,85 @@ interface Props {
 }
 
 export default function ScoreCard({ cluster }: Props) {
-  const score = calculateScore(cluster.transactions);
+  const { prefs } = usePreferenceStore();
+  const base = calculateScore(cluster.transactions, prefs.budget);
+  const weightedTotal = calculateWeightedScore(base, prefs.weights);
+
+  const bars = [
+    { label: "가격 가성비", score: base.rentScore, icon: "💰" },
+    { label: "대중교통", score: base.transportScore, icon: "🚇", hint: "추정" },
+    { label: "치안·안전", score: base.safetyScore, icon: "🛡️", hint: "추정" },
+    { label: "편의시설", score: base.facilityScore, icon: "🏪", hint: "추정" },
+    { label: "조용한 환경", score: base.quietScore, icon: "🌿", hint: "추정" },
+  ];
 
   return (
     <div>
       <h3 className="mb-3 text-sm font-semibold text-gray-700">
-        🏆 {cluster.dongName} 가성비 점수
+        🏆 {cluster.dongName} 가성비 분석
       </h3>
 
       {/* 총점 */}
       <div className="mb-4 flex items-center gap-4 rounded-xl bg-gray-50 p-4">
         <div
           className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full text-white text-xl font-bold"
-          style={{ backgroundColor: getScoreColor(score.total) }}
+          style={{ backgroundColor: getScoreColor(weightedTotal) }}
         >
-          {score.total}
+          {weightedTotal}
         </div>
         <div>
-          <p className="text-lg font-bold text-gray-800">
-            {getScoreLabel(score.total)}
-          </p>
+          <p className="text-lg font-bold text-gray-800">{getScoreLabel(weightedTotal)}</p>
           <p className="text-xs text-gray-400">
-            {cluster.dongName} 종합 가성비
+            {prefs.budget > 0
+              ? `월 ${prefs.budget.toLocaleString()}만 기준`
+              : "내 선호 조건 반영"}
           </p>
         </div>
       </div>
 
-      {/* 세부 점수 바 */}
-      <div className="flex flex-col gap-3">
-        <ScoreBar label="월세 가성비" score={score.rentScore} weight="40%" />
-        <ScoreBar label="편의시설" score={score.facilityScore} weight="30%" hint="추정값" />
-        <ScoreBar label="교통" score={score.transportScore} weight="30%" hint="추정값" />
+      {/* 예산 대비 분석 */}
+      {prefs.budget > 0 && base.avgMonthlyRent > 0 && (
+        <div className={`mb-4 rounded-lg p-3 text-xs ${
+          base.affordabilityRatio <= 30
+            ? "bg-green-50 text-green-700"
+            : base.affordabilityRatio <= 50
+            ? "bg-amber-50 text-amber-700"
+            : "bg-red-50 text-red-700"
+        }`}>
+          {base.affordabilityRatio <= 30
+            ? `✅ 적정 수준! 소득의 ${base.affordabilityRatio}%를 주거비로 사용`
+            : base.affordabilityRatio <= 50
+            ? `⚠️ 다소 부담. 소득의 ${base.affordabilityRatio}%를 주거비로 사용 (권장 30% 이하)`
+            : `🚨 과도한 부담. 소득의 ${base.affordabilityRatio}%를 주거비로 사용`}
+        </div>
+      )}
+
+      {/* 세부 점수 */}
+      <div className="flex flex-col gap-2.5">
+        {bars.map(({ label, score, icon, hint }) => (
+          <div key={label}>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-xs text-gray-600">{icon} {label}
+                {hint && <span className="ml-1 text-[10px] text-gray-300">*{hint}</span>}
+              </span>
+              <span className="text-xs font-semibold" style={{ color: getScoreColor(score) }}>
+                {score}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${score}%`, backgroundColor: getScoreColor(score) }}
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* 요약 통계 */}
+      {/* 통계 */}
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <StatBox label="평균 월세" value={`${score.avgMonthlyRent.toLocaleString()}만`} />
-        <StatBox label="중앙값 월세" value={`${score.medianRent.toLocaleString()}만`} />
-        <StatBox label="평균 보증금" value={formatDeposit(score.avgDeposit)} />
-      </div>
-    </div>
-  );
-}
-
-function ScoreBar({ label, score, weight, hint }: {
-  label: string; score: number; weight: string; hint?: string;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-gray-600">
-          {label}
-          <span className="ml-1 text-gray-300">({weight})</span>
-          {hint && <span className="ml-1 text-[10px] text-amber-400">*{hint}</span>}
-        </span>
-        <span className="text-xs font-semibold" style={{ color: getScoreColor(score) }}>
-          {score}점
-        </span>
-      </div>
-      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{
-            width: `${score}%`,
-            backgroundColor: getScoreColor(score),
-          }}
-        />
+        <StatBox label="평균 월세" value={`${base.avgMonthlyRent.toLocaleString()}만`} />
+        <StatBox label="중앙값" value={`${base.medianRent.toLocaleString()}만`} />
+        <StatBox label="평균 보증금" value={fmtDeposit(base.avgDeposit)} />
       </div>
     </div>
   );
@@ -178,9 +207,6 @@ function StatBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-function formatDeposit(manwon: number): string {
-  if (manwon >= 10000) {
-    return `${(manwon / 10000).toFixed(1)}억`;
-  }
-  return `${manwon.toLocaleString()}만`;
+function fmtDeposit(manwon: number): string {
+  return manwon >= 10000 ? `${(manwon / 10000).toFixed(1)}억` : `${manwon.toLocaleString()}만`;
 }

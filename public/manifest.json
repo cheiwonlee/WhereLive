@@ -1,0 +1,16 @@
+{
+  "name": "어디살지? - 청년 주거 가성비 분석",
+  "short_name": "어디살지?",
+  "description": "동네별 월세 + 편의시설 + 교통을 종합한 가성비 점수를 지도 위에 시각화",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

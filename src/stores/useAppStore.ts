@@ -66,6 +66,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setSelectedDong: (dong) => set({
     selectedDong: dong,
     sidebarView: dong ? "detail" : "list",
+    compareDongs: [], // 동 선택 시 비교 초기화
   }),
 
   compareDongs: [],
