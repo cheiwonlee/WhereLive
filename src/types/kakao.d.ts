@@ -23,6 +23,7 @@ declare namespace kakao.maps {
     }
     class Places {
       keywordSearch(keyword: string, callback: (data: any[], status: string, pagination: any) => void, options?: any): void;
+      categorySearch(code: string, callback: (data: any[], status: string, pagination: any) => void, options?: any): void;
     }
     const Status: { OK: string; ZERO_RESULT: string; ERROR: string };
   }

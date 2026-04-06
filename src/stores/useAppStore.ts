@@ -63,11 +63,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setSidebarView: (view) => set({ sidebarView: view }),
 
   selectedDong: null,
-  setSelectedDong: (dong) => set({
+  setSelectedDong: (dong) => set((s) => ({
     selectedDong: dong,
     sidebarView: dong ? "detail" : "list",
-    compareDongs: [], // 동 선택 시 비교 초기화
-  }),
+    // 선택한 동이 비교 목록에 있으면 비교에서 제거
+    compareDongs: dong ? s.compareDongs.filter((d) => d !== dong) : s.compareDongs,
+  })),
 
   compareDongs: [],
   toggleCompareDong: (dong) => {

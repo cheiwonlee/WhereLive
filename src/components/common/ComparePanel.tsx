@@ -1,5 +1,5 @@
 import type { DongCluster } from "@/hooks/useAllDongClusters";
-import { calculateScore } from "@/components/score/ScoreCard";
+import { calculateScore } from "@/utils/scoreCalc";
 
 interface Props {
   clusters: DongCluster[];

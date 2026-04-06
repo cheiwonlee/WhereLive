@@ -1,11 +1,12 @@
-import { useMemo, useRef, useCallback } from "react";
-import { Map, CustomOverlayMap } from "react-kakao-maps-sdk";
+import { useMemo, useRef, useCallback, useState } from "react";
+import { Map, CustomOverlayMap, Circle } from "react-kakao-maps-sdk";
 import { useAppStore } from "@/stores/useAppStore";
 import { useMultiGuTransactions } from "@/hooks/useRealTransactions";
 import { useAllDongClusters } from "@/hooks/useAllDongClusters";
 import { getVisibleGus } from "@/utils/getVisibleGus";
 import { getShortName } from "@/constants/regionCodes";
 import DongOverlay from "@/components/map/DongOverlay";
+import MapPOIOverlay from "@/components/map/MapPOIOverlay";
 
 export default function KakaoMap() {
   const {
@@ -17,6 +18,14 @@ export default function KakaoMap() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visibleGusRef = useRef<string[]>(visibleGus);
   visibleGusRef.current = visibleGus;
+
+  // 뷰포트 bounds 저장 (클러스터 필터링용)
+  const [viewBounds, setViewBounds] = useState<{
+    sw: { lat: number; lng: number }; ne: { lat: number; lng: number };
+  } | null>(null);
+
+  // 호버 중인 동 (경계 원 표시용)
+  const [hoveredDong, setHoveredDong] = useState<string | null>(null);
 
   const { guData, isLoading } = useMultiGuTransactions(visibleGus);
 
@@ -42,7 +51,19 @@ export default function KakaoMap() {
   }, [guData, filter]);
 
   const allFiltered = useMemo(() => filteredByGu.flatMap((g) => g.items), [filteredByGu]);
-  const clusters = useAllDongClusters(filteredByGu);
+  const allClusters = useAllDongClusters(filteredByGu);
+
+  // 뷰포트 안에 있는 클러스터만 표시
+  const visibleClusters = useMemo(() => {
+    if (!viewBounds) return allClusters;
+    const BUFFER = 0.005;
+    return allClusters.filter((c) =>
+      c.lat >= viewBounds.sw.lat - BUFFER &&
+      c.lat <= viewBounds.ne.lat + BUFFER &&
+      c.lng >= viewBounds.sw.lng - BUFFER &&
+      c.lng <= viewBounds.ne.lng + BUFFER
+    );
+  }, [allClusters, viewBounds]);
 
   const detectVisibleGus = useCallback((mapObj: kakao.maps.Map) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -50,11 +71,14 @@ export default function KakaoMap() {
       const bounds = mapObj.getBounds();
       const sw = bounds.getSouthWest();
       const ne = bounds.getNorthEast();
+      const boundsObj = {
+        sw: { lat: sw.getLat(), lng: sw.getLng() },
+        ne: { lat: ne.getLat(), lng: ne.getLng() },
+      };
+      setViewBounds(boundsObj);
+
       if (mapObj.getLevel() <= 8) {
-        const gus = getVisibleGus({
-          sw: { lat: sw.getLat(), lng: sw.getLng() },
-          ne: { lat: ne.getLat(), lng: ne.getLng() },
-        });
+        const gus = getVisibleGus(boundsObj);
         const newSorted = [...gus].sort().join(",");
         const curSorted = [...visibleGusRef.current].sort().join(",");
         if (newSorted !== curSorted) setVisibleGus(gus);
@@ -65,6 +89,11 @@ export default function KakaoMap() {
   }, [setVisibleGus]);
 
   const regionNames = visibleGus.map(getShortName);
+
+  // 호버 중인 클러스터 (경계 원 표시)
+  const hoveredCluster = hoveredDong
+    ? visibleClusters.find((c) => c.dongName === hoveredDong)
+    : null;
 
   return (
     <Map
@@ -81,7 +110,22 @@ export default function KakaoMap() {
         detectVisibleGus(mapObj);
       }}
     >
-      {clusters.map((cluster) => (
+      {/* 호버 시 동 경계 원 */}
+      {hoveredCluster && (
+        <Circle
+          center={{ lat: hoveredCluster.lat, lng: hoveredCluster.lng }}
+          radius={500}
+          strokeWeight={2}
+          strokeColor="#6366f1"
+          strokeOpacity={0.6}
+          strokeStyle="solid"
+          fillColor="#6366f1"
+          fillOpacity={0.08}
+        />
+      )}
+
+      {/* 동별 배지 */}
+      {visibleClusters.map((cluster) => (
         <CustomOverlayMap
           key={cluster.fullAddress}
           position={{ lat: cluster.lat, lng: cluster.lng }}
@@ -94,11 +138,20 @@ export default function KakaoMap() {
             onClick={() => setSelectedDong(
               selectedDong === cluster.dongName ? null : cluster.dongName
             )}
-            onCompareAdd={() => toggleCompareDong(cluster.dongName)}
+            onCompareAdd={() => {
+              if (selectedDong === cluster.dongName) setSelectedDong(null);
+              toggleCompareDong(cluster.dongName);
+            }}
+            onHover={() => setHoveredDong(cluster.dongName)}
+            onLeave={() => setHoveredDong(null)}
           />
         </CustomOverlayMap>
       ))}
 
+      {/* 지하철역 + 대학교 */}
+      <MapPOIOverlay />
+
+      {/* 상단 배지 */}
       <div className="absolute top-3 left-1/2 z-10 -translate-x-1/2">
         <div className="rounded-full bg-white/90 px-4 py-1.5 shadow-md backdrop-blur-sm">
           {isLoading ? (

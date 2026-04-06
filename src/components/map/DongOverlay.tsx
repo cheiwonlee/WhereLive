@@ -6,6 +6,8 @@ interface Props {
   isComparing: boolean;
   onClick: () => void;
   onCompareAdd: () => void;
+  onHover: () => void;
+  onLeave: () => void;
 }
 
 function getBubbleSize(count: number): number {
@@ -18,20 +20,25 @@ function getBubbleSize(count: number): number {
 }
 
 export default function DongOverlay({
-  cluster, isSelected, isComparing, onClick, onCompareAdd,
+  cluster, isSelected, isComparing, onClick, onCompareAdd, onHover, onLeave,
 }: Props) {
   const hasWolse = cluster.wolseCount > cluster.jeonseCount;
   const size = getBubbleSize(cluster.count);
 
-  function handleContextMenu(e: React.MouseEvent) {
-    e.preventDefault();
-    onCompareAdd();
-  }
+  const bgColor = isSelected ? "#1d4ed8"
+    : isComparing ? "#f59e0b"
+    : hasWolse ? "#3b82f6" : "#22c55e";
+
+  const labelBg = isSelected ? "#1d4ed8"
+    : isComparing ? "#f59e0b"
+    : "rgba(100, 80, 200, 0.85)";
 
   return (
     <div
       onClick={(e) => { e.stopPropagation(); onClick(); }}
-      onContextMenu={handleContextMenu}
+      onContextMenu={(e) => { e.preventDefault(); onCompareAdd(); }}
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
       style={{
         cursor: "pointer",
         display: "flex",
@@ -41,67 +48,38 @@ export default function DongOverlay({
         transform: "translate(-50%, -50%)",
       }}
     >
-      {/* 비교 중 표시 */}
       {isComparing && (
         <div style={{
-          position: "absolute",
-          top: "-8px",
-          right: "-8px",
-          width: "18px",
-          height: "18px",
-          borderRadius: "50%",
-          background: "#f59e0b",
-          color: "white",
-          fontSize: "10px",
-          fontWeight: 700,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-          zIndex: 1,
-        }}>
-          ⚖
-        </div>
+          position: "absolute", top: "-8px", right: "-8px",
+          width: "18px", height: "18px", borderRadius: "50%",
+          background: "#f59e0b", color: "white", fontSize: "10px", fontWeight: 700,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.2)", zIndex: 1,
+        }}>⚖</div>
       )}
 
-      <div
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          borderRadius: "50%",
-          background: isSelected ? "#1d4ed8"
-            : isComparing ? "#f59e0b"
-            : hasWolse ? "#3b82f6" : "#22c55e",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: size >= 48 ? "14px" : size >= 36 ? "13px" : "11px",
-          fontWeight: 700,
-          boxShadow: isSelected
-            ? "0 0 0 3px rgba(59,130,246,0.3), 0 2px 8px rgba(0,0,0,0.2)"
-            : "0 2px 6px rgba(0,0,0,0.15)",
-          transition: "all 0.15s ease",
-          fontFamily: "Pretendard, sans-serif",
-        }}
-      >
+      <div style={{
+        width: `${size}px`, height: `${size}px`, borderRadius: "50%",
+        background: bgColor, color: "white",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: size >= 48 ? "14px" : size >= 36 ? "13px" : "11px",
+        fontWeight: 700,
+        boxShadow: isSelected
+          ? "0 0 0 3px rgba(59,130,246,0.3), 0 2px 8px rgba(0,0,0,0.2)"
+          : "0 2px 6px rgba(0,0,0,0.15)",
+        transition: "all 0.15s ease",
+        fontFamily: "Pretendard, sans-serif",
+      }}>
         {cluster.count}
       </div>
-      <div
-        style={{
-          background: isSelected ? "#1d4ed8"
-            : isComparing ? "#f59e0b"
-            : "rgba(100, 80, 200, 0.85)",
-          color: "white",
-          fontSize: "10px",
-          fontWeight: 600,
-          padding: "2px 6px",
-          borderRadius: "4px",
-          whiteSpace: "nowrap",
-          fontFamily: "Pretendard, sans-serif",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
+
+      <div style={{
+        background: labelBg, color: "white",
+        fontSize: "10px", fontWeight: 600,
+        padding: "2px 6px", borderRadius: "4px",
+        whiteSpace: "nowrap", fontFamily: "Pretendard, sans-serif",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+      }}>
         {cluster.dongName}
       </div>
     </div>
