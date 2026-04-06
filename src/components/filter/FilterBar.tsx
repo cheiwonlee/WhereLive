@@ -155,9 +155,44 @@ export default function FilterBar() {
                 }}
                 unit={areaUnit === "pyeong" ? "평" : "㎡"}
               />
-              <p className="text-xs text-gray-400">
-                ⓘ 전용면적 = 실제 사용 공간. 공급면적보다 20~30% 작아요.
-              </p>
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-xs font-semibold text-gray-600 mb-2">📐 전용면적 vs 공급면적</p>
+
+                {/* 시각적 비교 */}
+                <div className="flex gap-2 mb-2">
+                  {/* 전용면적 박스 */}
+                  <div className="flex-1 rounded-lg border-2 border-blue-400 bg-blue-50 p-2 text-center">
+                    <p className="text-[10px] font-bold text-blue-600">🏠 전용면적</p>
+                    <p className="text-[9px] text-blue-500 mt-0.5">내가 실제로 사용하는 공간</p>
+                  </div>
+                  {/* 공급면적 박스 (전용 포함) */}
+                  <div className="flex-1 rounded-lg border-2 border-dashed border-gray-300 bg-white p-2 text-center">
+                    <p className="text-[10px] font-bold text-gray-500">📦 공급면적</p>
+                    <p className="text-[9px] text-gray-400 mt-0.5">전용 + 복도/계단/엘리베이터</p>
+                  </div>
+                </div>
+
+                {/* 예시 테이블 */}
+                <div className="rounded bg-white p-2 text-[10px]">
+                  <p className="font-semibold text-gray-500 mb-1">📋 흔히 말하는 평형 환산표</p>
+                  <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-gray-500">
+                    <span className="font-medium text-gray-600">통칭</span>
+                    <span className="font-medium text-gray-600">전용면적</span>
+                    <span className="font-medium text-gray-600">공급면적</span>
+
+                    <span>원룸</span><span>16~26㎡</span><span>20~33㎡</span>
+                    <span>투룸</span><span>26~40㎡</span><span>33~50㎡</span>
+                    <span>쓰리룸</span><span>40~59㎡</span><span>50~74㎡</span>
+                    <span>25평형</span><span>59㎡</span><span>84㎡</span>
+                    <span>34평형</span><span>84㎡</span><span>114㎡</span>
+                  </div>
+                </div>
+
+                <p className="mt-2 text-[10px] text-gray-400 leading-relaxed">
+                  💡 실거래가 데이터는 <strong>전용면적</strong> 기준입니다.
+                  부동산 광고에서 "25평" 이라고 하면 보통 공급면적 84㎡(전용 59㎡)를 의미해요.
+                </p>
+              </div>
             </div>
           )}
 
