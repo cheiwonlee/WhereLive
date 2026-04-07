@@ -5,6 +5,7 @@ import { useMultiGuTransactions } from "@/hooks/useRealTransactions";
 import { useAllDongClusters } from "@/hooks/useAllDongClusters";
 import { getVisibleGus } from "@/utils/getVisibleGus";
 import { getShortName } from "@/constants/regionCodes";
+import { toast } from "@/stores/useToastStore";
 import DongOverlay from "@/components/map/DongOverlay";
 import MapPOIOverlay from "@/components/map/MapPOIOverlay";
 
@@ -139,8 +140,19 @@ export default function KakaoMap() {
               selectedDong === cluster.dongName ? null : cluster.dongName
             )}
             onCompareAdd={() => {
+              const wasIncluded = compareDongs.includes(cluster.dongName);
+              if (!wasIncluded && compareDongs.length >= 2) {
+                toast.error("최대 2개까지만 비교할 수 있어요");
+                return;
+              }
               if (selectedDong === cluster.dongName) setSelectedDong(null);
               toggleCompareDong(cluster.dongName);
+              if (wasIncluded) {
+                toast.info(`${cluster.dongName} 비교에서 제거됨`);
+              } else {
+                const newCount = compareDongs.length + 1;
+                toast.success(`${cluster.dongName} 비교 추가 (${newCount}/2)`);
+              }
             }}
             onHover={() => setHoveredDong(cluster.dongName)}
             onLeave={() => setHoveredDong(null)}

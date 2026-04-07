@@ -104,17 +104,17 @@ export default function FilterBar() {
                     unit="만"
                   />
                   <DualRangeFilter
-                    label="월세 보증금 (만원)"
+                    label="월세 보증금"
                     min={0} max={30000} step={100}
                     value={filter.wolseDepositRange}
                     onChange={(v) => setFilter({ wolseDepositRange: v })}
-                    unit="만"
+                    formatValue={(n) => formatPrice(n)}
                   />
                 </>
               )}
               {(filter.dealType === "전세" || filter.dealType === "전체") && (
                 <DualRangeFilter
-                  label="전세 보증금"
+                  label="전세금"
                   min={0} max={100000} step={500}
                   value={filter.jeonseDepositRange}
                   onChange={(v) => setFilter({ jeonseDepositRange: v })}

@@ -4,6 +4,7 @@ import PriceTrendChart from "@/components/chart/PriceTrendChart";
 import ScoreCard from "@/components/score/ScoreCard";
 import { useAppStore } from "@/stores/useAppStore";
 import { getDisplayType, getTypeStyle, formatPrice, toPyeong } from "@/utils/display";
+import { openKakaoMap } from "@/utils/openKakaoMap";
 
 interface Props {
   cluster: DongCluster;
@@ -44,8 +45,8 @@ export default function DongDetailPanel({ cluster, allTransactions, onClose }: P
           return (
             <div key={item.id} onClick={() => focusLocation(cluster.lat, cluster.lng)}
               className="cursor-pointer border-b border-gray-50 px-4 py-2.5 hover:bg-gray-50">
-              <div className="flex items-start justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
                   {displayType === "전세" ? (
                     <p className="text-sm font-bold text-gray-900">전세 {formatPrice(item.dealAmount)}</p>
                   ) : (
@@ -53,9 +54,21 @@ export default function DongDetailPanel({ cluster, allTransactions, onClose }: P
                       {displayType} {formatPrice(item.depositAmount ?? 0)}/{item.monthlyRent?.toLocaleString()}
                     </p>
                   )}
-                  <p className="mt-0.5 text-xs text-gray-400">{item.apartName} · {areaDisplay(item.area)} · {item.floor}층</p>
+                  <p className="mt-0.5 text-xs text-gray-400 truncate">{item.apartName} · {areaDisplay(item.area)} · {item.floor}층</p>
                 </div>
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>{displayType}</span>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>{displayType}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openKakaoMap(item.apartName || `${cluster.shortGuName} ${cluster.dongName}`);
+                    }}
+                    title="카카오맵에서 보기"
+                    className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                  >
+                    🗺️ 카카오맵
+                  </button>
+                </div>
               </div>
             </div>
           );

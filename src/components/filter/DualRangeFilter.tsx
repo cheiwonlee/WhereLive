@@ -33,30 +33,26 @@ export default function DualRangeFilter({
         </span>
       </div>
 
-      {/* 숫자 입력 */}
+      {/* 숫자 입력 (콤마 자동) */}
       <div className="flex items-center gap-2">
         <input
-          type="number"
-          min={min}
-          max={value[1]}
-          step={step}
-          value={value[0]}
+          type="text"
+          inputMode="numeric"
+          value={value[0].toLocaleString()}
           onChange={(e) => {
-            const v = Number(e.target.value);
-            if (v <= value[1]) onChange([v, value[1]]);
+            const v = Number(e.target.value.replace(/[^\d]/g, "")) || 0;
+            if (v <= value[1] && v >= min) onChange([v, value[1]]);
           }}
           className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-center text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />
         <span className="text-xs text-gray-400 flex-shrink-0">~</span>
         <input
-          type="number"
-          min={value[0]}
-          max={max}
-          step={step}
-          value={value[1]}
+          type="text"
+          inputMode="numeric"
+          value={value[1].toLocaleString()}
           onChange={(e) => {
-            const v = Number(e.target.value);
-            if (v >= value[0]) onChange([value[0], v]);
+            const v = Number(e.target.value.replace(/[^\d]/g, "")) || 0;
+            if (v >= value[0] && v <= max) onChange([value[0], v]);
           }}
           className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-center text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         />

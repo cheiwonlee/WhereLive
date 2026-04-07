@@ -94,10 +94,17 @@ function TransactionCard({ item, areaLabel, onFocus, guName }: {
     if (coord) onFocus(coord.lat, coord.lng);
   }
 
+  async function handleOpenKakao(e: React.MouseEvent) {
+    e.stopPropagation();
+    const { openKakaoMap } = await import("@/utils/openKakaoMap");
+    const query = item.apartName || `${shortGu} ${item.dongName}`;
+    openKakaoMap(query);
+  }
+
   return (
     <div onClick={handleClick} className="cursor-pointer border-b border-gray-50 px-4 py-3 transition-colors hover:bg-gray-50">
       <div className="flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {displayType === "전세" ? (
             <p className="text-sm font-bold text-gray-900">전세 {formatPrice(item.dealAmount)}</p>
           ) : (
@@ -106,11 +113,20 @@ function TransactionCard({ item, areaLabel, onFocus, guName }: {
             </p>
           )}
           <p className="mt-1 text-xs text-gray-500">{areaLabel(item.area)} · {item.floor}층</p>
-          <p className="mt-0.5 text-xs text-gray-400">{shortGu} {item.dongName} · {item.apartName}</p>
+          <p className="mt-0.5 text-xs text-gray-400 truncate">{shortGu} {item.dongName} · {item.apartName}</p>
         </div>
-        <span className={`mt-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
-          {displayType}
-        </span>
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${style.bg} ${style.text}`}>
+            {displayType}
+          </span>
+          <button
+            onClick={handleOpenKakao}
+            title="카카오맵에서 보기"
+            className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+          >
+            🗺️ 카카오맵
+          </button>
+        </div>
       </div>
     </div>
   );

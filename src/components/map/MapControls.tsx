@@ -1,27 +1,30 @@
 import { useAppStore } from "@/stores/useAppStore";
+import { toast } from "@/stores/useToastStore";
 
 export default function MapControls() {
   const { map, setMapLevel, setMapCenter } = useAppStore();
 
   function handleLocation() {
-    if (!navigator.geolocation) return alert("위치 정보를 사용할 수 없습니다.");
-
-    // 먼저 낮은 정확도로 빠르게, 그 다음 높은 정확도로 재시도
+    if (!navigator.geolocation) {
+      toast.error("이 브라우저에서는 위치 정보를 사용할 수 없습니다");
+      return;
+    }
+    toast.info("현재 위치를 가져오는 중...");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setMapCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setMapLevel(4);
-        // 높은 정확도로 재요청
+        toast.success("현재 위치로 이동");
         navigator.geolocation.getCurrentPosition(
           (pos2) => {
             setMapCenter({ lat: pos2.coords.latitude, lng: pos2.coords.longitude });
             setMapLevel(4);
           },
-          () => {}, // 실패해도 무시 (이미 1차 위치 있으니)
+          () => {},
           { enableHighAccuracy: true, timeout: 10000 }
         );
       },
-      () => alert("위치 정보를 가져올 수 없습니다. 브라우저 설정을 확인해주세요."),
+      () => toast.error("위치 정보를 가져올 수 없습니다. 브라우저 권한을 확인해주세요"),
       { enableHighAccuracy: false, timeout: 5000 }
     );
   }

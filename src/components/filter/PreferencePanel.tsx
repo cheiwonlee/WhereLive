@@ -1,11 +1,11 @@
 import { usePreferenceStore } from "@/stores/usePreferenceStore";
 
-const WEIGHT_LABELS: Record<string, { label: string; icon: string; desc: string }> = {
-  affordability: { label: "가격 가성비", icon: "💰", desc: "월세·보증금이 저렴한 지역 선호" },
-  transport: { label: "대중교통", icon: "🚇", desc: "지하철역·버스 접근성" },
-  safety: { label: "치안·안전", icon: "🛡️", desc: "범죄율 낮은 안전한 지역" },
-  convenience: { label: "편의시설", icon: "🏪", desc: "편의점, 마트, 병원, 카페 등" },
-  quiet: { label: "조용한 환경", icon: "🌿", desc: "주거 밀집도 낮은 조용한 동네" },
+const WEIGHT_LABELS: Record<string, { label: string; icon: string; desc: string; defaultVal: number }> = {
+  affordability: { label: "가격 가성비", icon: "💰", desc: "월세·보증금이 저렴한 지역 선호", defaultVal: 80 },
+  transport: { label: "대중교통", icon: "🚇", desc: "지하철역·버스 접근성", defaultVal: 70 },
+  safety: { label: "치안·안전", icon: "🛡️", desc: "범죄율 낮은 안전한 지역", defaultVal: 60 },
+  convenience: { label: "편의시설", icon: "🏪", desc: "편의점, 마트, 병원, 카페 등", defaultVal: 50 },
+  quiet: { label: "조용한 환경", icon: "🌿", desc: "주거 밀집도 낮은 조용한 동네", defaultVal: 30 },
 };
 
 export default function PreferencePanel() {
@@ -91,39 +91,49 @@ export default function PreferencePanel() {
 
         {/* 가중치 슬라이더 */}
         <div>
-          <label className="mb-2 block text-xs font-semibold text-gray-600">
-            중요도 설정
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-semibold text-gray-600">중요도 설정</label>
+            <span className="text-[10px] text-gray-400">기본값 = 청년층 평균</span>
+          </div>
           <div className="flex flex-col gap-3">
-            {Object.entries(WEIGHT_LABELS).map(([key, { label, icon, desc }]) => (
-              <div key={key}>
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-xs text-gray-600">
-                    {icon} {label}
-                  </span>
-                  <span className="text-[10px] text-gray-400">
-                    {prefs.weights[key as keyof typeof prefs.weights]}
-                  </span>
+            {Object.entries(WEIGHT_LABELS).map(([key, { label, icon, desc, defaultVal }]) => {
+              const cur = prefs.weights[key as keyof typeof prefs.weights];
+              return (
+                <div key={key}>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs text-gray-600">{icon} {label}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {cur} <span className="text-gray-300">(기본 {defaultVal})</span>
+                    </span>
+                  </div>
+                  <input type="range" min={0} max={100} step={10}
+                    value={cur}
+                    onChange={(e) => setWeight(key as keyof typeof prefs.weights, Number(e.target.value))}
+                    className="w-full accent-primary-600 h-1.5"
+                  />
+                  <p className="text-[10px] text-gray-300">{desc}</p>
                 </div>
-                <input
-                  type="range"
-                  min={0} max={100} step={10}
-                  value={prefs.weights[key as keyof typeof prefs.weights]}
-                  onChange={(e) =>
-                    setWeight(key as keyof typeof prefs.weights, Number(e.target.value))
-                  }
-                  className="w-full accent-primary-600 h-1.5"
-                />
-                <p className="text-[10px] text-gray-300">{desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* 참고 정보 */}
+        {/* 점수 산출 방식 설명 */}
+        <details className="rounded-lg bg-gray-50 p-3 text-[10px] text-gray-500">
+          <summary className="cursor-pointer font-semibold text-gray-600">📊 가성비 점수 산출 방식</summary>
+          <div className="mt-2 leading-relaxed space-y-1.5">
+            <p>각 항목 점수 (0~100) × 내가 설정한 중요도 가중치 → 정규화하여 종합 점수 산출</p>
+            <p>• <strong>가격 가성비 (기본 80)</strong>: 입력한 월급의 30%를 적정 주거비로 보고, 평균 월세가 이보다 낮을수록 높은 점수</p>
+            <p>• <strong>대중교통 (기본 70)</strong>: 카카오 로컬 API로 1km 내 지하철역 검색 → 가장 가까운 역까지의 거리 기반</p>
+            <p>• <strong>치안·안전 (기본 60)</strong>: 2km 내 경찰서 검색 → 가장 가까운 곳까지의 거리 기반</p>
+            <p>• <strong>편의시설 (기본 50)</strong>: 편의점/마트/카페/병원/약국/은행 6종 갯수 가중합</p>
+            <p>• <strong>조용한 환경 (기본 30)</strong>: 편의점+카페 밀집도가 낮을수록 높은 점수 (역상관)</p>
+            <p className="mt-2 text-amber-600">💡 청년층 1인가구 기준으로 가격·교통 우선, 조용함은 우선순위 낮게 설정. 본인 라이프스타일에 맞게 조정하세요.</p>
+          </div>
+        </details>
+
         <div className="rounded-lg bg-blue-50 p-3 text-[10px] text-blue-600 leading-relaxed">
           💡 <strong>주거비 30% 규칙</strong>: 국토교통부 권장 기준으로, 월 소득의 30% 이내를 주거비로 사용하는 것이 적정합니다.
-          가성비 점수는 이 기준과 사용자 선호도를 반영하여 산출됩니다.
         </div>
       </div>
     </div>
