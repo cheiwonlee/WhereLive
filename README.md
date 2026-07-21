@@ -1,105 +1,151 @@
-# 🏠 어디살지? (WhereLive)
+# 🥗 ClearPlate · 클리어플레이트
 
-> 청년을 위한 동네별 주거 가성비 분석 서비스
+> 매일 먹는 식사 접시(Plate)에서 해로운 영양소를 깨끗하게(Clear) 비워내는, 지질 관리 특화 식단 기록 앱
 
-"내 월급으로 어디가 가성비 좋아?" — 실거래가 데이터를 기반으로 동네별 가성비를 분석하고 지도 위에 시각화합니다.
+모바일 우선(Mobile-First) 웹앱. React + TypeScript + Vite + Tailwind + Supabase 로 만들었어요.
 
-## 핵심 기능
+## ✨ 주요 기능
 
-- **지도 기반 탐색** — 지도를 움직이면 해당 지역 실거래가가 자동으로 표시
-- **동별 거래 배지** — 직방/다방 스타일 거래 건수 + 동 이름 표시
-- **가성비 점수** — 가격·교통·치안·편의시설·환경 5개 항목 종합 분석
-- **사용자 맞춤 분석** — 월급, 선호 조건 입력 → 개인화된 가성비 점수
-- **가격 추이 차트** — 보증금/월세 듀얼 Y축 차트
-- **동네 비교** — 2개 동네 나란히 비교
-- **반전세 분류** — 한국부동산원 기준 (보증금 > 월세 × 240)
-- **전국 지원** — 서울 + 전국 250개 시/군/구
+- **Supabase 이메일 인증** + 클라우드 양방향 동기화 (로컬 즉시 반영, 백그라운드로 DB push)
+- **온보딩**: 성별 기반 일일 권장 칼로리 (여 2,000 / 남 2,600)
+- **홈**: 주간 캘린더 + 4대 영양소 + 상세 지질 8종 추적
+- **3단계 경고 시스템**: 칼로리 → 지방 → 콜레스테롤 심각 경고
+- **식단 기록**: 7개 시간대 슬롯 + FatSecret API 음식 검색
+- **카메라 스캐너**: 영양성분표 촬영 / 갤러리 업로드 (OCR stub 포함)
+- **리포트**: Recharts 주간 트렌드 차트 + 어제 분석 + 염분 자가진단 10문항
+- **설정**: 프로필 · 성별 재설정 · 로그아웃
+- **PWA**: 홈 화면 설치 가능 (manifest + apple-touch-icon)
+- **콘텐츠**: 지질/당류/나트륨 카테고리별 영양 아티클
 
-## 기술 스택
-
-| 영역 | 기술 |
-|------|------|
-| Frontend | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS v4 |
-| State | Zustand |
-| Data Fetching | TanStack Query (useQueries 멀티 병렬) |
-| Map | 카카오맵 SDK (react-kakao-maps-sdk) |
-| Chart | Recharts (듀얼 Y축) |
-| Deploy | Vercel |
-
-## 시작하기
+## 🚀 빠른 시작
 
 ```bash
-git clone https://github.com/your-username/wherelive.git
-cd wherelive
+# 1. 패키지 설치
 npm install
-cp .env.example .env   # API 키 입력
+
+# 2. 환경변수 (없어도 mock 데이터로 동작해요)
+cp .env.example .env
+
+# 3. 개발 서버 실행
 npm run dev
 ```
 
-### 환경변수 (.env)
+브라우저에서 `http://localhost:5173` 접속. **Chrome DevTools → 모바일 뷰**로 보면 가장 예뻐요.
 
-```env
-VITE_KAKAO_APP_KEY=카카오_JavaScript_키
-VITE_DATA_GO_KR_KEY=공공데이터포털_인증키
+## 📦 기술 스택
+
+| 영역 | 기술 |
+|---|---|
+| 프레임워크 | React 18 + TypeScript + Vite |
+| 스타일 | Tailwind CSS (Pretendard + Fraunces 폰트) |
+| 상태관리 | Zustand (localStorage 자동 영속화) |
+| 데이터 패칭 | TanStack Query |
+| 라우팅 | React Router v6 |
+| DB / 인증 | Supabase |
+| 음식 데이터 | FatSecret Platform API |
+| 배포 | Vercel |
+
+## 🗂 폴더 구조
+
+```
+src/
+├── pages/         # Onboarding, Home, AddFood, Dashboard, Articles
+├── components/    # Header, BottomNav
+├── store/         # Zustand 전역 상태
+├── lib/           # supabase 클라이언트, fatsecret 서비스
+├── data/          # 정적 콘텐츠 (articles)
+└── types.ts       # 전역 타입
+supabase/
+├── schema.sql                    # DB 스키마 + RLS 정책
+└── functions/foods-search/       # FatSecret 프록시 Edge Function
 ```
 
-- **카카오맵**: [developers.kakao.com](https://developers.kakao.com) → 앱 → 플랫폼 키 → JavaScript 키
-- **공공데이터**: [data.go.kr](https://data.go.kr) → 국토교통부 오피스텔/아파트/연립다세대 전월세 API
+## 🔐 FatSecret API 키 — 절대 프론트엔드에 넣지 말 것!
 
-### 카카오맵 도메인 등록
+FatSecret이 발급해주는 **Client ID와 Client Secret은 서버에만 저장**해야 해요. `.env`에 `VITE_` 접두사로 넣으면 빌드 번들에 그대로 박혀서 누구나 브라우저에서 볼 수 있어요.
 
-앱 → 플랫폼 키 → JavaScript 키 → JavaScript SDK 도메인에 등록:
-- 개발: `http://localhost:5173`
-- 배포: `https://your-app.vercel.app`
+### ❌ 잘못된 방법
+```env
+# 절대 이렇게 하지 마세요!
+VITE_FATSECRET_CLIENT_ID=xxx
+VITE_FATSECRET_CLIENT_SECRET=xxx
+```
 
-## 배포 (Vercel)
+### ✅ 올바른 방법 — Supabase Edge Function의 Secrets
+
+```bash
+# 1. Supabase CLI 설치
+npm install -g supabase
+supabase login
+supabase link --project-ref YOUR-PROJECT-REF
+
+# 2. 키를 Supabase 서버에 secrets로 등록 (이게 핵심!)
+supabase secrets set FATSECRET_CLIENT_ID=발급받은_Client_ID
+supabase secrets set FATSECRET_CLIENT_SECRET=발급받은_Client_Secret
+
+# 3. 함수 배포
+supabase functions deploy foods-search
+```
+
+키는 `supabase/functions/foods-search/index.ts`에서 `Deno.env.get()`으로 읽혀요:
+```ts
+const id = Deno.env.get('FATSECRET_CLIENT_ID')!;
+const secret = Deno.env.get('FATSECRET_CLIENT_SECRET')!;
+```
+
+프론트엔드 `.env`에는 **함수 URL만** 넣으면 돼요 (이건 공개돼도 안전):
+```env
+VITE_FATSECRET_PROXY_URL=https://YOUR-PROJECT.supabase.co/functions/v1/foods-search
+```
+
+> 💡 FatSecret 대시보드 → "IP Restrictions"에서 테스트 중에는 `0.0.0.0/0`으로 풀어두세요. 안 그러면 "Invalid IP" 에러가 나요.
+
+
+
+## 🗄 Supabase 셋업
+
+1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성
+2. **SQL Editor** → `supabase/schema.sql` 내용 붙여넣고 실행
+3. **Settings → API** 에서 URL과 anon key 복사 → `.env`에 입력
+
+```
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
+```
+
+> 현재 코드는 localStorage 기반으로 동작해요(Zustand persist). Supabase 연동은 인증을 붙인 뒤 `useAppStore`의 액션에서 `supabase.from('food_entries').insert(...)`를 호출하도록 확장하면 됩니다.
+
+## 🌍 Vercel 배포
 
 ```bash
 npm install -g vercel
 vercel
 ```
 
-환경변수를 Vercel 대시보드에서도 설정해야 합니다:
-- `VITE_KAKAO_APP_KEY`
-- `VITE_DATA_GO_KR_KEY`
+또는 GitHub 저장소를 Vercel 대시보드에서 연결하면 push할 때마다 자동 배포.
 
-## 프로젝트 구조
+**Vercel 환경변수 설정**: Project Settings → Environment Variables 에 `.env` 내용을 그대로 등록.
 
-```
-src/
-├── components/
-│   ├── chart/       # PriceTrendChart (Recharts 듀얼 Y축)
-│   ├── common/      # Layout, DongDetailPanel, ComparePanel
-│   ├── filter/      # FilterBar, PlaceSearch, PreferencePanel, DualRangeFilter
-│   ├── map/         # KakaoMap, DongOverlay, MapControls
-│   └── score/       # ScoreCard (가성비 점수)
-├── constants/       # regionCodes, regionCenters, dongCoords
-├── hooks/           # useMultiGuTransactions, useAllDongClusters
-├── pages/           # HomePage
-├── services/        # api.ts (공공데이터 XML 파싱)
-├── stores/          # useAppStore, usePreferenceStore
-├── types/           # TypeScript 타입
-└── utils/           # geocode, display, getVisibleGus
-```
+`vercel.json`에 SPA fallback rewrite가 이미 들어있어요.
 
-## 사용 API
+## 🎨 디자인 노트
 
-| API | 용도 |
-|-----|------|
-| 국토교통부 실거래가 (3종) | 아파트/오피스텔/연립다세대 전월세 데이터 |
-| 카카오맵 SDK | 지도, 마커, 오버레이 |
-| 카카오 Places API | 장소 키워드 검색 |
-| 카카오 Geocoder | 주소 → 좌표 변환 |
+흔한 "AI 보라색 그라데이션" 톤을 피하고 **편집 매거진 + 카페 메뉴판** 분위기를 노렸어요:
 
-## 가성비 점수 산정 기준
+- **컬러**: 크림(#FBF9F4) 배경 + 세이지 그린 + 잉크 블랙. 강조는 코랄(#E66E5A)과 버터(#F5C56B).
+- **타이포**: 본문 Pretendard (한글 최적화), 디스플레이 Fraunces (영문 세리프, 이탤릭으로 포인트).
+- **레이아웃**: `max-w-[440px]` 모바일 컨테이너. 데스크탑에서도 모바일 프레임 그대로 중앙 정렬.
+- **숫자가 주인공**: 칼로리·지방량 같은 핵심 데이터를 큰 세리프 폰트로 강조.
 
-- **가격 가성비 (가중치 조절 가능)**: 소득 대비 주거비 비율(RIR) 기반, 국토교통부 권장 30% 이하
-- **대중교통**: 추정값 (추후 카카오 로컬 API 연동)
-- **치안·안전**: 추정값 (추후 경찰청 데이터 연동)
-- **편의시설**: 추정값 (추후 카카오 로컬 API 연동)
-- **조용한 환경**: 추정값 (추후 생활인구 데이터 연동)
+## 📋 다음 단계 아이디어
 
-## 라이선스
+- [ ] Supabase Auth (이메일/카카오 로그인)
+- [ ] localStorage → Supabase 동기화
+- [ ] 카메라 OCR 영양성분표 스캐너 (Google ML Kit 또는 Vision API)
+- [ ] 주간 / 월간 트렌드 차트 (Recharts — Sarah의 익숙한 스택!)
+- [ ] PWA 매니페스트 추가 (홈 화면 설치)
+- [ ] 다크 모드
 
-MIT
+---
+
+만든이: 이채원 (Sarah) · 2026

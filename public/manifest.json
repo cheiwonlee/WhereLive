@@ -1,16 +1,25 @@
 {
-  "name": "어디살지? - 청년 주거 가성비 분석",
-  "short_name": "어디살지?",
-  "description": "동네별 월세 + 편의시설 + 교통을 종합한 가성비 점수를 지도 위에 시각화",
+  "name": "ClearPlate · 클리어플레이트",
+  "short_name": "ClearPlate",
+  "description": "지질 관리 특화 식단 기록 앱",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "background_color": "#FBF9F4",
+  "theme_color": "#FBF9F4",
+  "lang": "ko",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
