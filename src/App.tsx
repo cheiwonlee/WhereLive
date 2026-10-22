@@ -1,55 +1,27 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAppStore } from './store/useAppStore';
-import { useAuth } from './hooks/useAuth';
-import { useHydrateFromCloud } from './hooks/useSyncedActions';
-import Onboarding from './pages/Onboarding';
-import Home from './pages/Home';
-import AddFood from './pages/AddFood';
-import Dashboard from './pages/Dashboard';
-import Articles from './pages/Articles';
-import ArticleDetail from './pages/ArticleDetail';
-import Login from './pages/Login';
-import Scanner from './pages/Scanner';
-import Settings from './pages/Settings';
-import BottomNav from './components/BottomNav';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import KakaoMapProvider from "@/components/map/KakaoMapProvider";
+import Layout from "@/components/common/Layout";
+import OnboardingGuide from "@/components/common/OnboardingGuide";
+import ToastContainer from "@/components/common/ToastContainer";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 30,
+      gcTime: 1000 * 60 * 60,
+      retry: 1,
+    },
+  },
+});
 
 export default function App() {
-  const gender = useAppStore((s) => s.gender);
-  const { loading } = useAuth();
-
-  useHydrateFromCloud();
-
-  if (loading) {
-    return (
-      <div className="phone grid place-items-center">
-        <div className="text-ink/30 text-sm">로딩중…</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="phone">
-      {!gender ? (
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Onboarding />} />
-        </Routes>
-      ) : (
-        <>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/add/:slot" element={<AddFood />} />
-            <Route path="/scan/:slot" element={<Scanner />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/articles" element={<Articles />} />
-            <Route path="/articles/:id" element={<ArticleDetail />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          <BottomNav />
-        </>
-      )}
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <KakaoMapProvider>
+        <Layout />
+        <OnboardingGuide />
+        <ToastContainer />
+      </KakaoMapProvider>
+    </QueryClientProvider>
   );
 }

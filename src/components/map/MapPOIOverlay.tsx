@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import { CustomOverlayMap } from "react-kakao-maps-sdk";
 import { useAppStore } from "@/stores/useAppStore";
 
 interface POI {
