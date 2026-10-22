@@ -1,3 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <text y="28" font-size="28">🏠</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="54" fill="#6C5CE7"/>
+  <!-- Roof and house outline merged into one strong silhouette -->
+  <path d="M47 119 L119 56 Q128 48 137 56 L209 119
+           Q215 125 209 132 L196 146 L196 194
+           Q196 207 183 207 L73 207 Q60 207 60 194
+           L60 146 L47 132 Q41 125 47 119 Z"
+        fill="#FFFFFF"/>
+  <!-- Pin-shaped inner negative-space mark -->
+  <path d="M128 91 C106 91 91 107 91 127
+           C91 153 128 181 128 181
+           C128 181 165 153 165 127
+           C165 107 150 91 128 91 Z"
+        fill="#6C5CE7"/>
+  <!-- Four simple window squares -->
+  <rect x="112" y="115" width="13" height="13" rx="3" fill="#FFFFFF"/>
+  <rect x="131" y="115" width="13" height="13" rx="3" fill="#FFFFFF"/>
+  <rect x="112" y="134" width="13" height="13" rx="3" fill="#FFFFFF"/>
+  <rect x="131" y="134" width="13" height="13" rx="3" fill="#FFFFFF"/>
+  <!-- Single mint accent -->
+  <circle cx="187" cy="67" r="15" fill="#B7E4C7"/>
 </svg>
